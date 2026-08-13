@@ -1,24 +1,12 @@
 # FIREWATCH Changelog
 
-## v1.5.1 — Map loader hotfix
+## v1.5.2 — Map Startup Hotfix
 
-- Removed the `fetch()` + `eval()` Leaflet execution path.
-- Replaced it with normal script loading: local vendor → unpkg → jsDelivr → cdnjs.
-- Fixed MAP startup state so a still-loading engine is not reported as a hard failure.
-- Added RETRY MAP ENGINE after all sources fail.
-- Updated diagnostics preparation wording to match the new loader.
-
-## v1.5.0 — Batch 8: Field Hardening
-
-- Added explicit START SHIFT / END SHIFT workflow on WATCH.
-- Added operator identity, opening checklist handoff, outgoing notes, unresolved-work summary, and shift history.
-- Added checksum-verified local recovery snapshots.
-- Added recovery creation before destructive reset/new-station/import operations.
-- Added manual recovery restore under TOWER → DIAGNOSTICS.
-- Added diagnostic JSON export and storage/map/mesh/weather/shift diagnostics.
-- Added persistent FIELD SIZE mode for larger touch/tablet controls.
-- Added structured 14-step two-lookout/two-radio field-test runner with PASS/FAIL/evidence notes and JSON export.
-- Added offline-prepared Leaflet 1.9.4 loader: local `vendor/leaflet.js` first, Cache Storage second, connected CDN retrieval/cache third.
-- Leaflet CSS is now a local file instead of a render-blocking CDN dependency.
-- START FRESH / NEW STATION / backup import now preserve a recovery point first.
-- Retained FWP/1 wire format and all Batch 5–7 mapping, mesh, lightning, horizon, weather, and triangulation behavior.
+- Embedded the Leaflet loader directly in the HTML.
+- Embedded Leaflet CSS directly in the HTML.
+- Removed dependency on `vendor/leaflet-loader.js` for online map startup.
+- Added visible per-source loading progress.
+- Added 5-second timeout per CDN.
+- Added explicit final error details and retry.
+- Removed cross-origin mode from classic script loading.
+- Preserved the v1.2 storage key and operational data migration path.

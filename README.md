@@ -1,4 +1,4 @@
-# FIREWATCH v1.5.1
+# FIREWATCH v1.5.2
 
 **Distributed Wildfire Observation & Lookout Operations System**  
 **Batch 8 — Field Hardening**
@@ -15,9 +15,9 @@ FIREWATCH remains a direct-upload application.
 
 There is no React, TypeScript, Vite, npm install, transpilation, or build command. Upload the package contents to a static directory and open `index.html`.
 
-## v1.5.1 map loader repair
+## v1.5.2 map loader repair
 
-Batch 8 originally fetched Leaflet as text and executed it with `eval()`. That could fail under a host Content Security Policy even when the browser had Internet access. v1.5.1 removes `eval()` completely. The local loader now tries normal script elements in this order: `vendor/leaflet.js`, unpkg, jsDelivr, then cdnjs. MAP distinguishes `LOADING` from `UNAVAILABLE` and provides a RETRY MAP ENGINE action after a hard failure.
+Batch 8 originally fetched Leaflet as text and executed it with `eval()`. That could fail under a host Content Security Policy even when the browser had Internet access. v1.5.2 removes `eval()` completely. The local loader now tries normal script elements in this order: `vendor/leaflet.js`, unpkg, jsDelivr, then cdnjs. MAP distinguishes `LOADING` from `UNAVAILABLE` and provides a RETRY MAP ENGINE action after a hard failure.
 
 For the most resilient tower deployment, place the official Leaflet 1.9.4 distribution file at `vendor/leaflet.js`; the app will use it before any network source.
 
@@ -160,5 +160,10 @@ FIREWATCH is an observation, mapping, communications, evidence, and coordination
 
 ---
 
-**FIREWATCH v1.5.1**  
+**FIREWATCH v1.5.2**  
 **SEE IT. LOCATE IT. SHARE IT. KEEP WATCH.**
+
+
+## v1.5.2 map startup hotfix
+
+The Leaflet loader and Leaflet CSS are embedded directly in `index.html`/`FIREWATCH.html`. Uploading just the HTML file no longer leaves FIREWATCH waiting for a missing `vendor/leaflet-loader.js`. Leaflet JavaScript is loaded with normal script elements from unpkg, jsDelivr, then cdnjs, with a 5-second timeout per source and an explicit failure message. No `eval()` is used.

@@ -1,37 +1,26 @@
-# FIREWATCH v1.5.1 Validation
+# FIREWATCH v1.5.2 Validation
 
-Validation performed for the Batch 8 map-loader hotfix.
+## Map startup hotfix
 
-## Root cause fixed
+- PASS — `index.html` contains the Leaflet loader inline.
+- PASS — `index.html` contains Leaflet CSS inline.
+- PASS — no reference to `./vendor/leaflet-loader.js` remains.
+- PASS — no reference to `./vendor/leaflet.css` remains.
+- PASS — three hosted Leaflet 1.9.4 JavaScript fallbacks are configured: unpkg, jsDelivr, cdnjs.
+- PASS — each hosted source has a finite 5-second timeout.
+- PASS — loader publishes progress and completion events.
+- PASS — MAP distinguishes STARTING / TRYING / UNAVAILABLE instead of showing an indefinite generic LOADING state.
+- PASS — RETRY MAP ENGINE remains available after all sources fail.
+- PASS — no dynamic `eval()` execution is used.
 
-The v1.5.0 Leaflet loader fetched the Leaflet JavaScript as text and then executed it with `eval()`. That introduced two failure modes even on a connected computer: host Content Security Policy can reject dynamic evaluation, and MAP could render while the asynchronous fetch path was still pending.
+## Static validation
 
-v1.5.1 removes the text/eval execution path. `vendor/leaflet-loader.js` now creates ordinary browser script elements and tries sources sequentially:
+- PASS — both deployable HTML files parse structurally.
+- PASS — all inline JavaScript blocks pass `node --check`.
+- PASS — Meshtastic Python bridge passes `py_compile`.
+- PASS — FIREWATCH application version displays v1.5.2.
+- PASS — existing local-storage key remains `firewatch.nobuild.v1.1`, preserving the upgrade path for existing browser data.
 
-1. `./vendor/leaflet.js`
-2. unpkg Leaflet 1.9.4
-3. jsDelivr Leaflet 1.9.4
-4. cdnjs Leaflet 1.9.4
+## Environment limitation
 
-MAP reports `LOADING MAP ENGINE` while that sequence is active and only reports `UNAVAILABLE` after every source fails. A `RETRY MAP ENGINE` action is then available.
-
-## Passed
-
-- `index.html` parses with Python `HTMLParser`.
-- `FIREWATCH.html` parses with Python `HTMLParser`.
-- Main inline application JavaScript passes `node --check`.
-- `vendor/leaflet-loader.js` passes `node --check`.
-- Loader fallback regression passed in a mocked browser DOM: missing local vendor source failed, UNPKG succeeded, status resolved `ok=true`, `source=UNPKG`, `version=1.9.4`.
-- Loader contains no JavaScript `eval()` execution path.
-- Optional `meshtastic_bridge.py` passes Python bytecode compilation.
-- Visible/internal application version is `1.5.1`.
-- Existing primary storage key remains `firewatch.nobuild.v1.1`; the hotfix does not intentionally clear or fork station data.
-- Existing recovery key remains unchanged so Batch 8 recovery snapshots remain available.
-
-## Not validated in this environment
-
-- A live request to each public CDN from the generated artifact runtime; the container has no general outbound DNS path.
-- Live OSM tile retrieval.
-- Physical Meshtastic RF behavior.
-
-The browser loader regression verifies sequencing and recovery behavior independently of external network availability.
+The sandbox cannot complete a trustworthy live Internet Leaflet/OSM browser test because outbound browser networking is restricted. The loader itself is therefore validated structurally and by syntax/control-flow checks rather than by claiming a successful external CDN request from this environment.

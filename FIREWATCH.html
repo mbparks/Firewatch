@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark light">
-<title>FIREWATCH v1.5.1 — Batch 8 Map Loader Fix</title>
+<title>FIREWATCH v1.5.2 — Map Startup Hotfix</title>
 <style>
 :root{--bg:#10130f;--panel:#171b16;--panel2:#1e241d;--ink:#eef3ea;--muted:#aab5a4;--line:#394237;--accent:#f0a23a;--danger:#ff6b57;--ok:#70c78c;--watch:#e6c65e;--info:#74acd8;--shadow:0 10px 28px rgba(0,0,0,.25);--radius:10px;--map:#0d140f}
 [data-theme="light"]{--bg:#eef1eb;--panel:#fff;--panel2:#f5f7f2;--ink:#172019;--muted:#657066;--line:#cbd3c8;--accent:#9b5b00;--danger:#a92e22;--ok:#226c3b;--watch:#7b6500;--info:#245d87;--shadow:0 8px 22px rgba(20,30,20,.10);--map:#e7ece4}
@@ -21,7 +21,670 @@ html[data-field-size="1"] .btn{min-height:44px;padding:11px 14px;font-size:15px}
 <style id="batch6-style">
 .quickSight{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.bearingHuge input{font-size:2.25rem;font-weight:850;padding:12px}.quickPick{display:flex;gap:7px;flex-wrap:wrap}.quickPick button{min-width:92px;min-height:46px;font-weight:800}.quickPick button.active{outline:3px solid var(--accent);outline-offset:1px}.meshStatus{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.meshDot{width:10px;height:10px;border-radius:50%;display:inline-block;background:var(--muted)}.meshDot.connected{background:var(--ok)}.meshDot.connecting{background:var(--warn)}.meshDot.error{background:var(--danger)}.queueRow.failed{background:rgba(255,136,123,.08)}.queueRow.queued{background:rgba(242,198,109,.07)}.nodeList{display:grid;gap:6px;max-height:260px;overflow:auto}.nodeCard{padding:8px;border:1px solid var(--line);border-radius:7px;background:var(--panel2)}.meshActions{display:flex;gap:6px;flex-wrap:wrap}.meshLedger td{vertical-align:top}.meshLedger .mono{max-width:260px;word-break:break-all}.detailsToggle{margin-top:10px}.hidden{display:none!important}@media(max-width:650px){.quickSight{grid-template-columns:1fr}.quickPick button{flex:1;min-width:76px}.bearingHuge input{font-size:1.8rem}}
 </style>
-<link rel="stylesheet" href="./vendor/leaflet.css">
+<style id="leaflet-vendored-css">
+/* required styles */
+
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-pane > svg,
+.leaflet-pane > canvas,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+	position: absolute;
+	left: 0;
+	top: 0;
+	}
+.leaflet-container {
+	overflow: hidden;
+	}
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	  -webkit-user-drag: none;
+	}
+/* Prevents IE11 from highlighting tiles in blue */
+.leaflet-tile::selection {
+	background: transparent;
+}
+/* Safari renders non-retina tile on retina better with this, but Chrome is worse */
+.leaflet-safari .leaflet-tile {
+	image-rendering: -webkit-optimize-contrast;
+	}
+/* hack that prevents hw layers "stretching" when loading new tiles */
+.leaflet-safari .leaflet-tile-container {
+	width: 1600px;
+	height: 1600px;
+	-webkit-transform-origin: 0 0;
+	}
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+	display: block;
+	}
+/* .leaflet-container svg: reset svg max-width decleration shipped in Joomla! (joomla.org) 3.x */
+/* .leaflet-container img: map is broken in FF if you have max-width: 100% on tiles */
+.leaflet-container .leaflet-overlay-pane svg {
+	max-width: none !important;
+	max-height: none !important;
+	}
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer,
+.leaflet-container .leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	width: auto;
+	padding: 0;
+	}
+
+.leaflet-container img.leaflet-tile {
+	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
+	mix-blend-mode: plus-lighter;
+}
+
+.leaflet-container.leaflet-touch-zoom {
+	-ms-touch-action: pan-x pan-y;
+	touch-action: pan-x pan-y;
+	}
+.leaflet-container.leaflet-touch-drag {
+	-ms-touch-action: pinch-zoom;
+	/* Fallback for FF which doesn't support pinch-zoom */
+	touch-action: none;
+	touch-action: pinch-zoom;
+}
+.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+	-ms-touch-action: none;
+	touch-action: none;
+}
+.leaflet-container {
+	-webkit-tap-highlight-color: transparent;
+}
+.leaflet-container a {
+	-webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+}
+.leaflet-tile {
+	filter: inherit;
+	visibility: hidden;
+	}
+.leaflet-tile-loaded {
+	visibility: inherit;
+	}
+.leaflet-zoom-box {
+	width: 0;
+	height: 0;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	z-index: 800;
+	}
+/* workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=888319 */
+.leaflet-overlay-pane svg {
+	-moz-user-select: none;
+	}
+
+.leaflet-pane         { z-index: 400; }
+
+.leaflet-tile-pane    { z-index: 200; }
+.leaflet-overlay-pane { z-index: 400; }
+.leaflet-shadow-pane  { z-index: 500; }
+.leaflet-marker-pane  { z-index: 600; }
+.leaflet-tooltip-pane   { z-index: 650; }
+.leaflet-popup-pane   { z-index: 700; }
+
+.leaflet-map-pane canvas { z-index: 100; }
+.leaflet-map-pane svg    { z-index: 200; }
+
+.leaflet-vml-shape {
+	width: 1px;
+	height: 1px;
+	}
+.lvml {
+	behavior: url(#default#VML);
+	display: inline-block;
+	position: absolute;
+	}
+
+
+/* control positioning */
+
+.leaflet-control {
+	position: relative;
+	z-index: 800;
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+.leaflet-top,
+.leaflet-bottom {
+	position: absolute;
+	z-index: 1000;
+	pointer-events: none;
+	}
+.leaflet-top {
+	top: 0;
+	}
+.leaflet-right {
+	right: 0;
+	}
+.leaflet-bottom {
+	bottom: 0;
+	}
+.leaflet-left {
+	left: 0;
+	}
+.leaflet-control {
+	float: left;
+	clear: both;
+	}
+.leaflet-right .leaflet-control {
+	float: right;
+	}
+.leaflet-top .leaflet-control {
+	margin-top: 10px;
+	}
+.leaflet-bottom .leaflet-control {
+	margin-bottom: 10px;
+	}
+.leaflet-left .leaflet-control {
+	margin-left: 10px;
+	}
+.leaflet-right .leaflet-control {
+	margin-right: 10px;
+	}
+
+
+/* zoom and fade animations */
+
+.leaflet-fade-anim .leaflet-popup {
+	opacity: 0;
+	-webkit-transition: opacity 0.2s linear;
+	   -moz-transition: opacity 0.2s linear;
+	        transition: opacity 0.2s linear;
+	}
+.leaflet-fade-anim .leaflet-map-pane .leaflet-popup {
+	opacity: 1;
+	}
+.leaflet-zoom-animated {
+	-webkit-transform-origin: 0 0;
+	    -ms-transform-origin: 0 0;
+	        transform-origin: 0 0;
+	}
+svg.leaflet-zoom-animated {
+	will-change: transform;
+}
+
+.leaflet-zoom-anim .leaflet-zoom-animated {
+	-webkit-transition: -webkit-transform 0.25s cubic-bezier(0,0,0.25,1);
+	   -moz-transition:    -moz-transform 0.25s cubic-bezier(0,0,0.25,1);
+	        transition:         transform 0.25s cubic-bezier(0,0,0.25,1);
+	}
+.leaflet-zoom-anim .leaflet-tile,
+.leaflet-pan-anim .leaflet-tile {
+	-webkit-transition: none;
+	   -moz-transition: none;
+	        transition: none;
+	}
+
+.leaflet-zoom-anim .leaflet-zoom-hide {
+	visibility: hidden;
+	}
+
+
+/* cursors */
+
+.leaflet-interactive {
+	cursor: pointer;
+	}
+.leaflet-grab {
+	cursor: -webkit-grab;
+	cursor:    -moz-grab;
+	cursor:         grab;
+	}
+.leaflet-crosshair,
+.leaflet-crosshair .leaflet-interactive {
+	cursor: crosshair;
+	}
+.leaflet-popup-pane,
+.leaflet-control {
+	cursor: auto;
+	}
+.leaflet-dragging .leaflet-grab,
+.leaflet-dragging .leaflet-grab .leaflet-interactive,
+.leaflet-dragging .leaflet-marker-draggable {
+	cursor: move;
+	cursor: -webkit-grabbing;
+	cursor:    -moz-grabbing;
+	cursor:         grabbing;
+	}
+
+/* marker & overlays interactivity */
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-image-layer,
+.leaflet-pane > svg path,
+.leaflet-tile-container {
+	pointer-events: none;
+	}
+
+.leaflet-marker-icon.leaflet-interactive,
+.leaflet-image-layer.leaflet-interactive,
+.leaflet-pane > svg path.leaflet-interactive,
+svg.leaflet-image-layer.leaflet-interactive path {
+	pointer-events: visiblePainted; /* IE 9-10 doesn't have auto */
+	pointer-events: auto;
+	}
+
+/* visual tweaks */
+
+.leaflet-container {
+	background: #ddd;
+	outline-offset: 1px;
+	}
+.leaflet-container a {
+	color: #0078A8;
+	}
+.leaflet-zoom-box {
+	border: 2px dotted #38f;
+	background: rgba(255,255,255,0.5);
+	}
+
+
+/* general typography */
+.leaflet-container {
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	}
+
+
+/* general toolbar styles */
+
+.leaflet-bar {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+	border-radius: 4px;
+	}
+.leaflet-bar a {
+	background-color: #fff;
+	border-bottom: 1px solid #ccc;
+	width: 26px;
+	height: 26px;
+	line-height: 26px;
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: black;
+	}
+.leaflet-bar a,
+.leaflet-control-layers-toggle {
+	background-position: 50% 50%;
+	background-repeat: no-repeat;
+	display: block;
+	}
+.leaflet-bar a:hover,
+.leaflet-bar a:focus {
+	background-color: #f4f4f4;
+	}
+.leaflet-bar a:first-child {
+	border-top-left-radius: 4px;
+	border-top-right-radius: 4px;
+	}
+.leaflet-bar a:last-child {
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	border-bottom: none;
+	}
+.leaflet-bar a.leaflet-disabled {
+	cursor: default;
+	background-color: #f4f4f4;
+	color: #bbb;
+	}
+
+.leaflet-touch .leaflet-bar a {
+	width: 30px;
+	height: 30px;
+	line-height: 30px;
+	}
+.leaflet-touch .leaflet-bar a:first-child {
+	border-top-left-radius: 2px;
+	border-top-right-radius: 2px;
+	}
+.leaflet-touch .leaflet-bar a:last-child {
+	border-bottom-left-radius: 2px;
+	border-bottom-right-radius: 2px;
+	}
+
+/* zoom control */
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	font: bold 18px 'Lucida Console', Monaco, monospace;
+	text-indent: 1px;
+	}
+
+.leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out  {
+	font-size: 22px;
+	}
+
+
+/* layers control */
+
+.leaflet-control-layers {
+	box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+	background: #fff;
+	border-radius: 5px;
+	}
+.leaflet-control-layers-toggle {
+	background-image: url(images/layers.png);
+	width: 36px;
+	height: 36px;
+	}
+.leaflet-retina .leaflet-control-layers-toggle {
+	background-image: url(images/layers-2x.png);
+	background-size: 26px 26px;
+	}
+.leaflet-touch .leaflet-control-layers-toggle {
+	width: 44px;
+	height: 44px;
+	}
+.leaflet-control-layers .leaflet-control-layers-list,
+.leaflet-control-layers-expanded .leaflet-control-layers-toggle {
+	display: none;
+	}
+.leaflet-control-layers-expanded .leaflet-control-layers-list {
+	display: block;
+	position: relative;
+	}
+.leaflet-control-layers-expanded {
+	padding: 6px 10px 6px 6px;
+	color: #333;
+	background: #fff;
+	}
+.leaflet-control-layers-scrollbar {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	padding-right: 5px;
+	}
+.leaflet-control-layers-selector {
+	margin-top: 2px;
+	position: relative;
+	top: 1px;
+	}
+.leaflet-control-layers label {
+	display: block;
+	font-size: 13px;
+	font-size: 1.08333em;
+	}
+.leaflet-control-layers-separator {
+	height: 0;
+	border-top: 1px solid #ddd;
+	margin: 5px -10px 5px -6px;
+	}
+
+/* Default icon URLs */
+.leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+	background-image: url(images/marker-icon.png);
+	}
+
+
+/* attribution and scale controls */
+
+.leaflet-container .leaflet-control-attribution {
+	background: #fff;
+	background: rgba(255, 255, 255, 0.8);
+	margin: 0;
+	}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+	padding: 0 5px;
+	color: #333;
+	line-height: 1.4;
+	}
+.leaflet-control-attribution a {
+	text-decoration: none;
+	}
+.leaflet-control-attribution a:hover,
+.leaflet-control-attribution a:focus {
+	text-decoration: underline;
+	}
+.leaflet-attribution-flag {
+	display: inline !important;
+	vertical-align: baseline !important;
+	width: 1em;
+	height: 0.6669em;
+	}
+.leaflet-left .leaflet-control-scale {
+	margin-left: 5px;
+	}
+.leaflet-bottom .leaflet-control-scale {
+	margin-bottom: 5px;
+	}
+.leaflet-control-scale-line {
+	border: 2px solid #777;
+	border-top: none;
+	line-height: 1.1;
+	padding: 2px 5px 1px;
+	white-space: nowrap;
+	-moz-box-sizing: border-box;
+	     box-sizing: border-box;
+	background: rgba(255, 255, 255, 0.8);
+	text-shadow: 1px 1px #fff;
+	}
+.leaflet-control-scale-line:not(:first-child) {
+	border-top: 2px solid #777;
+	border-bottom: none;
+	margin-top: -2px;
+	}
+.leaflet-control-scale-line:not(:first-child):not(:last-child) {
+	border-bottom: 2px solid #777;
+	}
+
+.leaflet-touch .leaflet-control-attribution,
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	box-shadow: none;
+	}
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+	border: 2px solid rgba(0,0,0,0.2);
+	background-clip: padding-box;
+	}
+
+
+/* popup */
+
+.leaflet-popup {
+	position: absolute;
+	text-align: center;
+	margin-bottom: 20px;
+	}
+.leaflet-popup-content-wrapper {
+	padding: 1px;
+	text-align: left;
+	border-radius: 12px;
+	}
+.leaflet-popup-content {
+	margin: 13px 24px 13px 20px;
+	line-height: 1.3;
+	font-size: 13px;
+	font-size: 1.08333em;
+	min-height: 1px;
+	}
+.leaflet-popup-content p {
+	margin: 17px 0;
+	margin: 1.3em 0;
+	}
+.leaflet-popup-tip-container {
+	width: 40px;
+	height: 20px;
+	position: absolute;
+	left: 50%;
+	margin-top: -1px;
+	margin-left: -20px;
+	overflow: hidden;
+	pointer-events: none;
+	}
+.leaflet-popup-tip {
+	width: 17px;
+	height: 17px;
+	padding: 1px;
+
+	margin: -10px auto 0;
+	pointer-events: auto;
+
+	-webkit-transform: rotate(45deg);
+	   -moz-transform: rotate(45deg);
+	    -ms-transform: rotate(45deg);
+	        transform: rotate(45deg);
+	}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+	background: white;
+	color: #333;
+	box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+	}
+.leaflet-container a.leaflet-popup-close-button {
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: none;
+	text-align: center;
+	width: 24px;
+	height: 24px;
+	font: 16px/24px Tahoma, Verdana, sans-serif;
+	color: #757575;
+	text-decoration: none;
+	background: transparent;
+	}
+.leaflet-container a.leaflet-popup-close-button:hover,
+.leaflet-container a.leaflet-popup-close-button:focus {
+	color: #585858;
+	}
+.leaflet-popup-scrolled {
+	overflow: auto;
+	}
+
+.leaflet-oldie .leaflet-popup-content-wrapper {
+	-ms-zoom: 1;
+	}
+.leaflet-oldie .leaflet-popup-tip {
+	width: 24px;
+	margin: 0 auto;
+
+	-ms-filter: "progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678)";
+	filter: progid:DXImageTransform.Microsoft.Matrix(M11=0.70710678, M12=0.70710678, M21=-0.70710678, M22=0.70710678);
+	}
+
+.leaflet-oldie .leaflet-control-zoom,
+.leaflet-oldie .leaflet-control-layers,
+.leaflet-oldie .leaflet-popup-content-wrapper,
+.leaflet-oldie .leaflet-popup-tip {
+	border: 1px solid #999;
+	}
+
+
+/* div icon */
+
+.leaflet-div-icon {
+	background: #fff;
+	border: 1px solid #666;
+	}
+
+
+/* Tooltip */
+/* Base styles for the element that has a tooltip */
+.leaflet-tooltip {
+	position: absolute;
+	padding: 6px;
+	background-color: #fff;
+	border: 1px solid #fff;
+	border-radius: 3px;
+	color: #222;
+	white-space: nowrap;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	pointer-events: none;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+	}
+.leaflet-tooltip.leaflet-interactive {
+	cursor: pointer;
+	pointer-events: auto;
+	}
+.leaflet-tooltip-top:before,
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	position: absolute;
+	pointer-events: none;
+	border: 6px solid transparent;
+	background: transparent;
+	content: "";
+	}
+
+/* Directions */
+
+.leaflet-tooltip-bottom {
+	margin-top: 6px;
+}
+.leaflet-tooltip-top {
+	margin-top: -6px;
+}
+.leaflet-tooltip-bottom:before,
+.leaflet-tooltip-top:before {
+	left: 50%;
+	margin-left: -6px;
+	}
+.leaflet-tooltip-top:before {
+	bottom: 0;
+	margin-bottom: -12px;
+	border-top-color: #fff;
+	}
+.leaflet-tooltip-bottom:before {
+	top: 0;
+	margin-top: -12px;
+	margin-left: -6px;
+	border-bottom-color: #fff;
+	}
+.leaflet-tooltip-left {
+	margin-left: -6px;
+}
+.leaflet-tooltip-right {
+	margin-left: 6px;
+}
+.leaflet-tooltip-left:before,
+.leaflet-tooltip-right:before {
+	top: 50%;
+	margin-top: -6px;
+	}
+.leaflet-tooltip-left:before {
+	right: 0;
+	margin-right: -12px;
+	border-left-color: #fff;
+	}
+.leaflet-tooltip-right:before {
+	left: 0;
+	margin-left: -12px;
+	border-right-color: #fff;
+	}
+
+/* Printing */
+
+@media print {
+	/* Prevent printers from removing background-images of controls. */
+	.leaflet-control {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		}
+	}
+
+</style>
 <style id="leaflet-critical">
 /* ClimateWatch-proven Leaflet rendering hardening. */
 .leaflet-container{overflow:hidden;outline:0;-webkit-tap-highlight-color:transparent;background:#d8ddd6;font:12px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -34,14 +697,75 @@ html[data-field-size="1"] .btn{min-height:44px;padding:11px 14px;font-size:15px}
 .leaflet-control-zoom a{display:block;text-align:center;text-decoration:none}.leaflet-control-attribution{font-size:10px;background:rgba(255,255,255,.86);padding:1px 5px;color:#333}.leaflet-control-attribution a{color:#075f99}
 #leafletMap{position:absolute;inset:0;width:100%;height:100%;z-index:1}.mapHud{z-index:800;pointer-events:none}.mapHud .hudbox{pointer-events:auto}.mapLegend{z-index:800;pointer-events:none;max-width:min(520px,calc(100% - 20px))}.fw-tower-icon,.fw-landmark-icon,.fw-lightning-icon{background:transparent;border:0}.fw-map-dot{display:block;width:16px;height:16px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.6)}.fw-map-dot.local{background:#f0a23a}.fw-map-dot.remote{background:#3f85c6}.fw-map-dot.landmark{width:10px;height:10px;background:#59655a;border-width:1px}.fw-map-lightning{font-size:20px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}.leaflet-tooltip.fw-label{background:rgba(20,24,20,.86);border:1px solid rgba(255,255,255,.25);color:#fff;box-shadow:none;font-weight:700;padding:3px 6px}
 </style>
-<script defer src="./vendor/leaflet-loader.js"></script>
+<script id="firewatch-leaflet-loader">
+/* FIREWATCH v1.5.2 inline Leaflet loader. No external loader file, no eval. */
+(function(){
+'use strict';
+const VERSION='1.9.4';
+const SOURCES=[
+ {label:'UNPKG',src:'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'},
+ {label:'JSDELIVR',src:'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'},
+ {label:'CDNJS',src:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js'}
+];
+let generation=0, active=false;
+function publish(detail,eventName){
+ window.FIREWATCH_LEAFLET_STATUS=detail;
+ try{window.dispatchEvent(new CustomEvent(eventName||'leafletprogress',{detail}));}catch(e){}
+ return detail;
+}
+function loadScript(item,timeoutMs,gen){
+ return new Promise((resolve,reject)=>{
+  if(window.L&&window.L.version){resolve(item.label);return;}
+  const s=document.createElement('script');
+  let done=false;
+  const finish=(ok,err)=>{
+   if(done)return; done=true; clearTimeout(timer); s.onload=s.onerror=null;
+   if(gen!==generation){reject(new Error('superseded'));return;}
+   if(ok&&window.L&&window.L.version){resolve(item.label);}
+   else reject(err||new Error(item.label+' loaded but Leaflet did not initialize'));
+  };
+  const timer=setTimeout(()=>finish(false,new Error(item.label+' timed out after '+timeoutMs+' ms')),timeoutMs);
+  s.src=item.src;
+  s.async=true;
+  s.dataset.firewatchLeaflet=item.label;
+  s.onload=()=>finish(true);
+  s.onerror=()=>finish(false,new Error(item.label+' failed to load'));
+  document.head.appendChild(s);
+ });
+}
+async function attempt(){
+ if(window.L&&window.L.version){
+  const d={ok:true,source:'PRELOADED',version:window.L.version,error:null}; publish(d,'leafletready'); return d;
+ }
+ if(active)return window.FIREWATCH_LEAFLET_STATUS;
+ active=true; const gen=++generation, errors=[];
+ publish({ok:false,source:'STARTING',version:null,error:null},'leafletprogress');
+ for(const item of SOURCES){
+  publish({ok:false,source:'TRYING '+item.label,version:null,error:errors.join(' | ')||null},'leafletprogress');
+  try{
+   const source=await loadScript(item,5000,gen);
+   active=false;
+   const d={ok:true,source,version:window.L&&window.L.version||null,error:null}; publish(d,'leafletready'); return d;
+  }catch(err){
+   if(String(err&&err.message)==='superseded')return window.FIREWATCH_LEAFLET_STATUS;
+   errors.push(item.label+': '+(err&&err.message||String(err)));
+  }
+ }
+ active=false;
+ const d={ok:false,source:'UNAVAILABLE',version:null,error:errors.join(' | ')}; publish(d,'leafletready'); return d;
+}
+window.FirewatchLeafletLoader={version:VERSION,sources:SOURCES.map(x=>x.src),retry:()=>{active=false;return attempt();},status:()=>window.FIREWATCH_LEAFLET_STATUS};
+window.FIREWATCH_LEAFLET_STATUS={ok:false,source:'STARTING',version:null,error:null};
+attempt();
+})();
+</script>
 </head>
 <body>
 <div id="startup" class="startup"><h1>FIREWATCH STARTUP ERROR</h1><p id="startupMsg"></p><pre id="startupDetail"></pre></div>
 <div class="app" id="app">
   <header class="topbar">
     <div class="brandrow">
-      <div class="brand">FIREWATCH</div><span class="version">v1.5.1 NO-BUILD</span>
+      <div class="brand">FIREWATCH</div><span class="version">v1.5.2 NO-BUILD</span>
       <span class="badge info" id="roleBadge">LOOKOUT</span>
       <div class="status-led"><span class="dot" id="saveDot"></span><span id="saveText">SAVED LOCAL</span></div>
       <button class="btn" id="globalFreshBtn" title="Clear current operational data and begin a clean watch">START FRESH</button>
@@ -66,7 +790,7 @@ html[data-field-size="1"] .btn{min-height:44px;padding:11px 14px;font-size:15px}
 'use strict';
 (function(){
 try{
-const VERSION='1.5.1'; const KEY='firewatch.nobuild.v1.1'; const RECOVERY_KEY='firewatch.recovery.v1.5'; const R=6371000;
+const VERSION='1.5.2'; const KEY='firewatch.nobuild.v1.1'; const RECOVERY_KEY='firewatch.recovery.v1.5'; const R=6371000;
 const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
 const uid=(p='id')=>p+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
 const now=()=>new Date().toISOString(); const fmt=t=>new Date(t).toLocaleString(); const time=t=>new Date(t).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
@@ -159,14 +883,14 @@ function mapClickActions(lat,lon){
 }
 function createMapIncident(lat,lon){const b=bearingBetween(tower(),{lat,lon}),r=haversine(tower(),{lat,lon});modal('Create incident from map',`<div class="notice">Direct map location · ${lat.toFixed(5)}, ${lon.toFixed(5)} · ${b.toFixed(1)}° · ${(r/1609.344).toFixed(1)} mi</div><div class="field"><label>Incident title</label><input id="miTitle" value="Map incident"></div><div class="formgrid"><div class="field"><label>Confidence</label><select id="miConf">${['LOW','MODERATE','HIGH','CONFIRMED'].map(x=>`<option>${x}</option>`).join('')}</select></div><div class="field"><label>Urgency</label><select id="miUrg"><option>ROUTINE</option><option selected>IMPORTANT</option><option>EMERGENCY</option></select></div><div class="field"><label>Location uncertainty ±m</label><input id="miUnc" type="number" value="250"></div></div><button class="btn primary" id="miSave" style="margin-top:10px">CREATE INCIDENT</button>`,()=>{$('#miSave').onclick=()=>{const reportId=Math.random().toString(16).slice(2,8).padEnd(6,'0').slice(0,6).toUpperCase(),i={id:uid('inc'),reportId,title:$('#miTitle').value.trim()||'Map incident',status:'SUSPECTED',createdAt:now(),updatedAt:now(),targetLat:lat,targetLon:lon,uncertaintyM:+$('#miUnc').value||250,ellipse:{majorM:+$('#miUnc').value||250,minorM:+$('#miUnc').value||250,bearingDeg:0},geometryQuality:'MAP',rmsResidualDeg:0,locationMethod:'MAP SELECTION',confidence:$('#miConf').value,urgency:$('#miUrg').value,observationIds:[],bearingIds:[]};state.incidents.push(i);state.settings.selectedIncidentId=i.id;log('INCIDENT',`Created ${i.reportId} from map selection`,i.id);save();closeModal();renderAll();setView('incidents')}})}
 function renderMap(){destroyLeafletMap();const c=state.settings.mapLeafletCenter||[tower().lat,tower().lon],zoom=Number.isFinite(state.settings.mapLeafletZoom)?state.settings.mapLeafletZoom:9;
-$('#view-map').innerHTML=`<div class="split"><div class="mapShell"><div id="leafletMap" aria-label="FIREWATCH operational map"></div><div class="mapHud"><div class="hudbox"><strong>Operational map</strong><div class="small muted" id="mapStatus">${window.L?'Leaflet · loading map…':'MAP LIBRARY UNAVAILABLE'}</div></div><div class="hudbox" id="mapCoord">Click map for coordinates, bearing/range, LOS, and quick actions.</div></div><div class="mapLegend">● lookout · ⚡ lightning · dashed line = bearing · red polygon = uncertainty<br><span class="muted">Range rings / azimuth grid are centered on the local tower.</span></div></div><div><div class="card"><h2>Fire Finder</h2><div class="formgrid"><div class="field"><label>Tower</label><select id="ffTower">${state.towers.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div><div class="field"><label>Bearing °</label><input id="ffBearing" type="number" step=".1" value="108.5"></div><div class="field"><label>Uncertainty ±°</label><input id="ffUnc" type="number" step=".1" value="0.5"></div><div class="field"><label>Range m</label><input id="ffRange" type="number" value="15000"></div><div class="field"><label>Range ±m</label><input id="ffRU" type="number" value="800"></div><div class="field"><label>Vertical angle °</label><input id="ffVert" type="number" step=".1" value="-0.5"></div></div><div class="row" style="margin-top:10px"><button class="btn primary" id="ffPlot">PLOT / ADD BEARING</button></div></div>
+$('#view-map').innerHTML=`<div class="split"><div class="mapShell"><div id="leafletMap" aria-label="FIREWATCH operational map"></div><div class="mapHud"><div class="hudbox"><strong>Operational map</strong><div class="small muted" id="mapStatus">${window.L?'Leaflet '+(window.L.version||'')+' · READY':((window.FIREWATCH_LEAFLET_STATUS?.source||'STARTING').replace('TRYING ','LEAFLET · TRYING ')+'…')}</div></div><div class="hudbox" id="mapCoord">Click map for coordinates, bearing/range, LOS, and quick actions.</div></div><div class="mapLegend">● lookout · ⚡ lightning · dashed line = bearing · red polygon = uncertainty<br><span class="muted">Range rings / azimuth grid are centered on the local tower.</span></div></div><div><div class="card"><h2>Fire Finder</h2><div class="formgrid"><div class="field"><label>Tower</label><select id="ffTower">${state.towers.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select></div><div class="field"><label>Bearing °</label><input id="ffBearing" type="number" step=".1" value="108.5"></div><div class="field"><label>Uncertainty ±°</label><input id="ffUnc" type="number" step=".1" value="0.5"></div><div class="field"><label>Range m</label><input id="ffRange" type="number" value="15000"></div><div class="field"><label>Range ±m</label><input id="ffRU" type="number" value="800"></div><div class="field"><label>Vertical angle °</label><input id="ffVert" type="number" step=".1" value="-0.5"></div></div><div class="row" style="margin-top:10px"><button class="btn primary" id="ffPlot">PLOT / ADD BEARING</button></div></div>
 <div class="card" style="margin-top:12px"><h2>Map controls</h2><div class="row"><button class="btn" id="mapHome">HOME TOWER</button><button class="btn" id="fitOps">FIT OPERATIONS</button><button class="btn" id="mapImport">IMPORT GEOJSON / CSV</button><button class="btn" id="terrainImport">IMPORT TERRAIN CSV</button><button class="btn" id="lightningImport">IMPORT LIGHTNING CSV</button><button class="btn" id="lightningBuild">BUILD LIGHTNING WATCHES</button></div><input id="mapFile" type="file" hidden accept=".json,.geojson,.csv"><input id="terrainFile" type="file" hidden accept=".csv"><input id="lightningFile" type="file" hidden accept=".csv">
 <div class="formgrid" style="margin-top:10px"><div class="field"><label>Basemap</label><select id="basemapMode"><option value="osm" ${state.settings.basemapMode==='osm'?'selected':''}>ONLINE OSM</option><option value="local" ${state.settings.basemapMode==='local'?'selected':''}>LOCAL TILES</option><option value="none" ${state.settings.basemapMode==='none'?'selected':''}>NO BASEMAP</option></select></div><div class="field"><label>Local tile URL template</label><input id="localTileUrl" value="${esc(state.settings.localTileUrl||'./tiles/{z}/{x}/{y}.png')}"></div></div>
 <div class="row" style="margin-top:8px">${[['mapShowTowers','TOWERS'],['mapShowLandmarks','LANDMARKS'],['mapShowBearings','BEARINGS'],['mapShowIncidents','INCIDENTS'],['mapShowLightning','LIGHTNING'],['mapShowCompass','AZIMUTH GRID'],['mapShowRangeRings','RANGE RINGS'],['mapShowImported','IMPORTED LAYERS']].map(([k,l])=>`<label class="badge"><input style="width:auto" type="checkbox" data-map-toggle="${k}" ${state.settings[k]!==false?'checked':''}> ${l}</label>`).join('')}</div><div class="small muted" style="margin-top:8px">Local tiles use the same Leaflet tile mechanism as OSM. Example: ./tiles/{z}/{x}/{y}.png. No compile step is required.</div></div></div></div>`;
 $('#ffTower').value=tower().id;$('#ffPlot').onclick=()=>{const t=state.towers.find(x=>x.id===$('#ffTower').value),b=+$('#ffBearing').value,u=+$('#ffUnc').value||.5,r=+$('#ffRange').value,ru=+$('#ffRU').value||0,va=+$('#ffVert').value||0,inc=incident();const be={id:uid('bear'),reportId:inc?.reportId||'LOCAL',incidentId:inc?.id,towerId:t.id,bearingDeg:b,uncertaintyDeg:u,rangeM:Number.isFinite(r)?r:null,rangeUncertaintyM:ru,verticalAngleDeg:va,createdAt:now()};state.bearings.push(be);if(inc){inc.bearingIds=Array.from(new Set([...(inc.bearingIds||[]),be.id]));retriangulate(inc)}log('FIRE FINDER',`Bearing ${b.toFixed(1)}° from ${t.name}`,inc?.id);save();renderMap()};
 $('#mapImport').onclick=()=>$('#mapFile').click();$('#terrainImport').onclick=()=>$('#terrainFile').click();$('#lightningImport').onclick=()=>$('#lightningFile').click();$('#lightningBuild').onclick=()=>{const n=syncLightningRechecks(false);if(!n)alert('No new lightning clusters require a recheck.');renderMap()};$('#mapFile').onchange=importMap;$('#terrainFile').onchange=importTerrain;$('#lightningFile').onchange=importLightning;
 $('#basemapMode').onchange=e=>{state.settings.basemapMode=e.target.value;state.settings.localTileUrl=$('#localTileUrl').value.trim()||'./tiles/{z}/{x}/{y}.png';save();renderMap()};$('#localTileUrl').onchange=e=>{state.settings.localTileUrl=e.target.value.trim()||'./tiles/{z}/{x}/{y}.png';save();if(state.settings.basemapMode==='local')renderMap()};$$('[data-map-toggle]').forEach(x=>x.onchange=()=>{state.settings[x.dataset.mapToggle]=x.checked;save();renderMap()});
-if(!window.L){const ls=window.FIREWATCH_LEAFLET_STATUS||{source:'LOADING'},ms=$('#mapStatus');if(ls.source==='UNAVAILABLE'){ms.innerHTML='LEAFLET UNAVAILABLE · CHECK CONTENT BLOCKER / CSP / CDN<br><button class="btn" id="mapRetryLeaflet" style="margin-top:6px">RETRY MAP ENGINE</button>';$('#mapRetryLeaflet').onclick=async()=>{ms.textContent='LEAFLET · RETRYING…';const r=await window.FirewatchLeafletLoader?.retry();if(!r?.ok)alert('Leaflet still unavailable: '+(r?.error||'all configured sources failed'));renderMap()}}else ms.textContent='LEAFLET · LOADING MAP ENGINE…';return}
+if(!window.L){const ls=window.FIREWATCH_LEAFLET_STATUS||{source:'STARTING'},ms=$('#mapStatus');if(ls.source==='UNAVAILABLE'){ms.innerHTML='LEAFLET UNAVAILABLE · '+esc(ls.error||'ALL HOSTED SOURCES FAILED')+'<br><button class="btn" id="mapRetryLeaflet" style="margin-top:6px">RETRY MAP ENGINE</button>';$('#mapRetryLeaflet').onclick=async()=>{ms.textContent='LEAFLET · RETRYING…';await window.FirewatchLeafletLoader?.retry();renderMap()}}else{ms.textContent=(ls.source||'STARTING').replace('TRYING ','LEAFLET · TRYING ')+'…'}return}
 leafletMap=L.map('leafletMap',{zoomControl:false,preferCanvas:true,zoomAnimation:false,fadeAnimation:false,markerZoomAnimation:false}).setView(c,zoom);L.control.zoom({position:'bottomright'}).addTo(leafletMap);leafletBase=makeBasemap();
 leafletGroups={compass:L.layerGroup().addTo(leafletMap),imports:L.layerGroup().addTo(leafletMap),towers:L.layerGroup().addTo(leafletMap),landmarks:L.layerGroup().addTo(leafletMap),bearings:L.layerGroup().addTo(leafletMap),incidents:L.layerGroup().addTo(leafletMap),lightning:L.layerGroup().addTo(leafletMap)};renderCompassOverlay();
 if(state.settings.mapShowImported!==false)for(const layer of state.mapLayers.filter(x=>x.visible!==false)){try{L.geoJSON(layer.geojson,{style:()=>mapLayerStyle(layer),pointToLayer:(feature,latlng)=>L.circleMarker(latlng,{radius:5,...mapLayerStyle(layer),fillOpacity:.65}),onEachFeature:(feature,l)=>{const n=featureName(feature.properties);if(n)l.bindTooltip(safeTooltip(n),{className:'fw-label'})}}).addTo(leafletGroups.imports)}catch(e){console.warn('GeoJSON layer',layer.name,e)}}
@@ -257,6 +981,7 @@ function download(blob,name){const a=document.createElement('a');a.href=URL.crea
 function downloadIncidentPdf(i){const bs=state.bearings.filter(b=>b.incidentId===i.id),obs=state.observations.filter(o=>o.incidentId===i.id),logs=state.logs.filter(l=>l.incidentId===i.id),text=[`Report: ${i.reportId}`,`Status: ${i.status}`,`Location: ${i.targetLat||'—'}, ${i.targetLon||'—'} (${i.locationMethod||'UNKNOWN'}, +/-${Math.round(i.uncertaintyM||0)} m)`,`Geometry: ${i.geometryQuality||'—'} RMS ${Number(i.rmsResidualDeg||0).toFixed(2)} deg`,'','OBSERVATIONS',...obs.map(o=>`${fmt(o.createdAt)} ${o.type} ${o.bearingDeg.toFixed(1)} deg ${o.confidence} ${o.notes||''}`),'','BEARINGS',...bs.map(b=>`${state.towers.find(t=>t.id===b.towerId)?.name||b.towerId}: ${b.bearingDeg.toFixed(1)} deg +/-${b.uncertaintyDeg}`),'','TIMELINE',...logs.map(l=>`${fmt(l.timestamp)} ${l.kind}: ${l.message}`)].join('\n');download(pdfBlob(`FIREWATCH Incident ${i.reportId}`,text),`FIREWATCH-Incident-${i.reportId}.pdf`)}
 function downloadShiftPdf(){const wx=latestWeather(),active=state.incidents.filter(i=>i.status!=='CLOSED'),text=[`Tower: ${tower().name}`,`Operator: ${state.shift.operatorName}`,`Shift started: ${fmt(state.shift.startedAt)}`,`Latest weather: ${wx?`${wx.temperatureF} F, RH ${wx.rh}%, wind ${wx.windDir} ${wx.windMph} mph, visibility ${wx.visibilityMi} mi (${wx.source})`:'none'}`,'',`ACTIVE INCIDENTS: ${active.length}`,...active.map(i=>`${i.reportId} ${i.title} ${i.status}`),'',`OPEN RECHECKS: ${state.watchItems.filter(w=>w.status==='OPEN').length}`,...state.watchItems.filter(w=>w.status==='OPEN').map(w=>`${w.priority} ${w.title}: ${w.reason}`),'','HANDOFF',state.shift.handoffNotes||'','',...state.logs.slice(0,80).reverse().map(l=>`${fmt(l.timestamp)} ${l.kind}: ${l.message}`)].join('\n');download(pdfBlob('FIREWATCH Shift / Handoff Report',text),`FIREWATCH-Shift-${new Date().toISOString().slice(0,10)}.pdf`)}
 $$('#nav button').forEach(b=>b.onclick=()=>setView(b.dataset.view));$('#globalFreshBtn').onclick=startFresh;$('#fieldSizeBtn').onclick=()=>{state.settings.fieldSize=!state.settings.fieldSize;save();renderAll()};$('#themeBtn').onclick=()=>{state.settings.theme=state.settings.theme==='light'?'dark':'light';save();renderAll()};document.addEventListener('keydown',e=>{if(e.target.matches('input,textarea,select'))return;if(e.key.toLowerCase()==='n')openSighting();if(e.key.toLowerCase()==='m')setView('map');if(e.key.toLowerCase()==='l')setView('log');if(e.key==='Escape')closeModal()});
+window.addEventListener('leafletprogress',e=>{const ms=$('#mapStatus');if(ms&&!window.L){const d=e.detail||{};ms.textContent=(d.source||'LOADING').replace('TRYING ','LEAFLET · TRYING ')+'…'}});
 window.addEventListener('leafletready',()=>{if(state.settings.view==='map')renderMap()});
 meshTimer=setInterval(processMeshQueue,1000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')createRecovery('Visibility change')});window.addEventListener('pagehide',()=>createRecovery('Page hide'));document.documentElement.dataset.theme=state.settings.theme==='light'?'light':'';document.documentElement.dataset.fieldSize=state.settings.fieldSize?'1':'0';$('#roleBadge').textContent=state.settings.role||'LOOKOUT';setView(state.settings.view||'watch');
 }catch(err){document.getElementById('startup').classList.add('show');document.getElementById('startupMsg').textContent='FIREWATCH could not start. Your browser storage has not been intentionally cleared.';document.getElementById('startupDetail').textContent=err&&err.stack?err.stack:String(err);console.error(err)}
