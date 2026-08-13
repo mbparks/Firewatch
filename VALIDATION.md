@@ -1,40 +1,37 @@
-# FIREWATCH v1.5.0 Validation
+# FIREWATCH v1.5.1 Validation
 
-Validation performed for the Batch 8 field-hardening release.
+Validation performed for the Batch 8 map-loader hotfix.
+
+## Root cause fixed
+
+The v1.5.0 Leaflet loader fetched the Leaflet JavaScript as text and then executed it with `eval()`. That introduced two failure modes even on a connected computer: host Content Security Policy can reject dynamic evaluation, and MAP could render while the asynchronous fetch path was still pending.
+
+v1.5.1 removes the text/eval execution path. `vendor/leaflet-loader.js` now creates ordinary browser script elements and tries sources sequentially:
+
+1. `./vendor/leaflet.js`
+2. unpkg Leaflet 1.9.4
+3. jsDelivr Leaflet 1.9.4
+4. cdnjs Leaflet 1.9.4
+
+MAP reports `LOADING MAP ENGINE` while that sequence is active and only reports `UNAVAILABLE` after every source fails. A `RETRY MAP ENGINE` action is then available.
 
 ## Passed
 
-- HTML parsed successfully with Python `HTMLParser`.
+- `index.html` parses with Python `HTMLParser`.
+- `FIREWATCH.html` parses with Python `HTMLParser`.
 - Main inline application JavaScript passes `node --check`.
 - `vendor/leaflet-loader.js` passes `node --check`.
+- Loader fallback regression passed in a mocked browser DOM: missing local vendor source failed, UNPKG succeeded, status resolved `ok=true`, `source=UNPKG`, `version=1.9.4`.
+- Loader contains no JavaScript `eval()` execution path.
 - Optional `meshtastic_bridge.py` passes Python bytecode compilation.
-- 134 named browser functions found with no duplicate function declarations.
-- Visible/internal version updated to `1.5.0`.
-- No direct `<script>` or `<link>` tag points at the Leaflet CDN; FIREWATCH loads local `vendor/leaflet.css` and the local map-engine loader.
-- Local Leaflet CSS is 14,806 bytes and matches Git blob SHA `2961b7618a57617d1015d31d2094c425c3d86ce9` from the 1.9.4 distribution mirror used for verification.
-- FWP/1 OBS encode/decode regression passes at exactly 27 bytes.
-- FWP/1 BEARING encode/decode regression passes at exactly 27 bytes and preserves `±0.45°` bearing uncertainty.
-- Recovery checksum regression passes: modified state produces a different FNV-1a checksum.
-- Static presence checks pass for shift controls, recovery restore, diagnostics, field-test runner, FIELD SIZE mode, local Leaflet CSS, and map-engine loader.
-- Existing primary storage key `firewatch.nobuild.v1.1` is retained so earlier no-build FIREWATCH state can migrate forward through `normalizeState()`.
-
-## Batch 8 behavior reviewed
-
-- START SHIFT / END SHIFT create chronological SHIFT log entries.
-- Closed shifts are retained in `shiftHistory`.
-- START FRESH, NEW STATION, and backup import request a recovery snapshot first.
-- Recovery restore creates a snapshot of the current state before replacing it.
-- Field-test runs retain per-step PASS/FAIL, timestamp, and evidence note and can export JSON.
-- Diagnostics expose application, storage, Leaflet, basemap, mesh, weather, counts, shift, and recovery status.
-- FIELD SIZE is persisted in station settings and applied on initial load.
-- Leaflet loader order is: optional local `vendor/leaflet.js` → browser-local cached runtime → connected hosted runtime which is cached for later use.
+- Visible/internal application version is `1.5.1`.
+- Existing primary storage key remains `firewatch.nobuild.v1.1`; the hotfix does not intentionally clear or fork station data.
+- Existing recovery key remains unchanged so Batch 8 recovery snapshots remain available.
 
 ## Not validated in this environment
 
-- Physical two-radio Meshtastic RF behavior.
-- Real lookout-tower range/terrain performance.
-- Long-duration browser storage behavior with very large panorama images/recovery histories.
-- A full interactive browser session with live OSM tiles; this environment does not provide a reliable graphical browser/network path for that test.
-- First-ever fully disconnected Leaflet startup with `vendor/leaflet.js`, because the third-party Leaflet JavaScript distribution could not be transferred into the generated artifact by this environment. The package supports the file directly if placed there, and the included preparation workflow caches it after a connected run.
+- A live request to each public CDN from the generated artifact runtime; the container has no general outbound DNS path.
+- Live OSM tile retrieval.
+- Physical Meshtastic RF behavior.
 
-Use **TOWER → FIELDTEST** on the target hardware as the release acceptance test before relying on the radio workflow operationally.
+The browser loader regression verifies sequencing and recovery behavior independently of external network availability.

@@ -1,51 +1,84 @@
-/* FIREWATCH Leaflet 1.9.4 offline-prepared loader.
-   The application is no-build. This helper stores the upstream Leaflet browser
-   distribution in Cache Storage after a connected preparation/first load, then
-   evaluates the cached copy on later disconnected starts. */
+/* FIREWATCH Leaflet 1.9.4 runtime loader — v1.5.1 map startup fix.
+   No dynamic evaluation. No package manager. Tries a local vendored copy first, then
+   several normal <script src> CDN sources. Emits a single leafletready event
+   when loading succeeds or all sources fail. */
 (function(){
 'use strict';
 const VERSION='1.9.4';
-const LOCAL='./vendor/leaflet.js';
-const URL='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-const CACHE='firewatch-map-engine-v1';
-const STORAGE='firewatch.leaflet.1.9.4';
-function announce(ok,source,error){
-  window.FIREWATCH_LEAFLET_STATUS={ok,source,version:window.L&&window.L.version||null,error:error?String(error):null};
-  window.dispatchEvent(new CustomEvent('leafletready',{detail:window.FIREWATCH_LEAFLET_STATUS}));
+const SOURCES=[
+  {label:'LOCAL VENDOR',src:'./vendor/leaflet.js'},
+  {label:'UNPKG',src:'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'},
+  {label:'JSDELIVR',src:'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'},
+  {label:'CDNJS',src:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js'}
+];
+let settled=false;
+let resolveReady;
+const ready=new Promise(resolve=>{resolveReady=resolve});
+function status(ok,source,error){
+  const detail={ok,source,version:window.L&&window.L.version||null,error:error?String(error):null};
+  window.FIREWATCH_LEAFLET_STATUS=detail;
+  if(!settled){
+    settled=true;
+    resolveReady(detail);
+    window.dispatchEvent(new CustomEvent('leafletready',{detail}));
+  }
+  return detail;
 }
-function execute(text,source){
-  if(!text||text.length<10000)throw new Error('Leaflet payload is incomplete.');
-  (0,eval)(text+'\n//# sourceURL=firewatch-leaflet-1.9.4.js');
-  if(!window.L||window.L.version!=='1.9.4')throw new Error('Leaflet 1.9.4 did not initialize.');
-  announce(true,source);
-  return true;
+function loadSource(item,timeoutMs){
+  return new Promise((resolve,reject)=>{
+    if(window.L&&window.L.version){resolve(item.label);return}
+    const s=document.createElement('script');
+    let done=false;
+    const finish=(ok,err)=>{
+      if(done)return;
+      done=true;
+      clearTimeout(timer);
+      s.onload=s.onerror=null;
+      if(ok&&window.L&&window.L.version==='1.9.4')resolve(item.label);
+      else reject(err||new Error(item.label+' loaded but Leaflet 1.9.4 did not initialize'));
+    };
+    const timer=setTimeout(()=>finish(false,new Error(item.label+' timed out')),timeoutMs);
+    s.src=item.src;
+    s.async=true;
+    s.crossOrigin='anonymous';
+    s.dataset.firewatchLeaflet=item.label;
+    s.onload=()=>finish(true);
+    s.onerror=()=>finish(false,new Error(item.label+' failed to load'));
+    document.head.appendChild(s);
+  });
 }
-async function localFile(){
-  try{const r=await fetch(LOCAL,{cache:'no-store'});if(!r.ok)return false;return execute(await r.text(),'LOCAL VENDOR FILE')}catch{return false}
-}
-async function cached(){
-  try{const text=localStorage.getItem(STORAGE);if(text)return execute(text,'LOCAL STORAGE CACHE')}catch{}
-  if(!('caches' in window))return false;
-  const c=await caches.open(CACHE),r=await c.match(URL);
-  if(!r)return false;
-  return execute(await r.text(),'CACHE STORAGE');
-}
-async function network(force=false){
-  const r=await fetch(URL,{mode:'cors',cache:force?'reload':'default'});
-  if(!r.ok)throw new Error('Leaflet download HTTP '+r.status);
-  const text=await r.clone().text();
-  try{localStorage.setItem(STORAGE,text)}catch{}
-  if('caches' in window){const c=await caches.open(CACHE);await c.put(URL,new Response(text,{headers:{'Content-Type':'application/javascript'}}));}
-  return execute(text,'NETWORK → CACHE');
+async function attempt(forceNetwork=false){
+  if(window.L&&window.L.version==='1.9.4')return status(true,'PRELOADED');
+  settled=false;
+  const errors=[];
+  const list=forceNetwork?SOURCES.slice(1):SOURCES;
+  for(const item of list){
+    try{
+      const source=await loadSource(item,item.label==='LOCAL VENDOR'?1200:8000);
+      return status(true,source);
+    }catch(err){
+      errors.push(err.message||String(err));
+      console.warn('FIREWATCH Leaflet source failed:',item.label,err);
+    }
+  }
+  return status(false,'UNAVAILABLE',errors.join(' | '));
 }
 async function prepare(){
-  try{return await network(true)}catch(e){announce(false,'PREPARE FAILED',e);throw e}
+  /* In v1.5.1 PREPARE means verify a connected network source can initialize.
+     For first-ever offline use, deploy the official Leaflet distribution at
+     vendor/leaflet.js; no eval/cache execution is used. */
+  if(window.L&&window.L.version==='1.9.4')return status(true,'ALREADY READY');
+  return attempt(true);
 }
-window.FirewatchLeafletLoader={version:VERSION,url:URL,local:LOCAL,cacheName:CACHE,storageKey:STORAGE,prepare,status:()=>window.FIREWATCH_LEAFLET_STATUS||{ok:false,source:'PENDING'}};
-(async()=>{
-  if(window.L){announce(true,'PRELOADED');return}
-  try{if(await localFile())return}catch(e){console.warn('Local Leaflet vendor failed',e)}
-  try{if(await cached())return}catch(e){console.warn('Cached Leaflet failed',e)}
-  try{await network(false)}catch(e){console.warn('Leaflet unavailable; FIREWATCH continues without map engine.',e);announce(false,'UNAVAILABLE',e)}
-})();
+window.FirewatchLeafletLoader={
+  version:VERSION,
+  sources:SOURCES.map(x=>x.src),
+  local:SOURCES[0].src,
+  ready,
+  prepare,
+  retry:()=>attempt(false),
+  status:()=>window.FIREWATCH_LEAFLET_STATUS||{ok:false,source:'LOADING',version:null,error:null}
+};
+window.FIREWATCH_LEAFLET_STATUS={ok:false,source:'LOADING',version:null,error:null};
+attempt(false);
 })();

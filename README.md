@@ -1,4 +1,4 @@
-# FIREWATCH v1.5.0
+# FIREWATCH v1.5.1
 
 **Distributed Wildfire Observation & Lookout Operations System**  
 **Batch 8 — Field Hardening**
@@ -14,6 +14,12 @@ FIREWATCH is a local-first browser instrument for fire lookout towers, cooperati
 FIREWATCH remains a direct-upload application.
 
 There is no React, TypeScript, Vite, npm install, transpilation, or build command. Upload the package contents to a static directory and open `index.html`.
+
+## v1.5.1 map loader repair
+
+Batch 8 originally fetched Leaflet as text and executed it with `eval()`. That could fail under a host Content Security Policy even when the browser had Internet access. v1.5.1 removes `eval()` completely. The local loader now tries normal script elements in this order: `vendor/leaflet.js`, unpkg, jsDelivr, then cdnjs. MAP distinguishes `LOADING` from `UNAVAILABLE` and provides a RETRY MAP ENGINE action after a hard failure.
+
+For the most resilient tower deployment, place the official Leaflet 1.9.4 distribution file at `vendor/leaflet.js`; the app will use it before any network source.
 
 ## Batch 8 highlights
 
@@ -154,5 +160,5 @@ FIREWATCH is an observation, mapping, communications, evidence, and coordination
 
 ---
 
-**FIREWATCH v1.5.0**  
+**FIREWATCH v1.5.1**  
 **SEE IT. LOCATE IT. SHARE IT. KEEP WATCH.**

@@ -1,5 +1,13 @@
 # FIREWATCH Changelog
 
+## v1.5.1 — Map loader hotfix
+
+- Removed the `fetch()` + `eval()` Leaflet execution path.
+- Replaced it with normal script loading: local vendor → unpkg → jsDelivr → cdnjs.
+- Fixed MAP startup state so a still-loading engine is not reported as a hard failure.
+- Added RETRY MAP ENGINE after all sources fail.
+- Updated diagnostics preparation wording to match the new loader.
+
 ## v1.5.0 — Batch 8: Field Hardening
 
 - Added explicit START SHIFT / END SHIFT workflow on WATCH.
