@@ -1,491 +1,158 @@
-# FIREWATCH
+# FIREWATCH v1.5.0
 
 **Distributed Wildfire Observation & Lookout Operations System**  
-**Version 1.1.0 — No-Build / Self-Contained Edition**
+**Batch 8 — Field Hardening**
 
-FIREWATCH is a local-first browser application for remote fire lookout towers, wildfire observers, dispatch personnel, field crews, and cooperating lookout stations.
+FIREWATCH is a local-first browser instrument for fire lookout towers, cooperating lookouts, dispatch, and field crews.
 
-Its operational workflow is:
+**PREPARE → SCAN → OBSERVE → LOCATE → SHARE → TRIANGULATE → MONITOR → HAND OFF**
 
-**PREPARE → SCAN → OBSERVE → LOCATE → ASSESS → SHARE → TRIANGULATE → REPORT → MONITOR → HAND OFF**
+> Help the lookout look outside more, not look at the computer more.
 
-> **Help the lookout look outside more, not look at the computer more.**
+## No compile
 
-## No-Build Edition
+FIREWATCH remains a direct-upload application.
 
-FIREWATCH v1.1.0 is intentionally self-contained.
+There is no React, TypeScript, Vite, npm install, transpilation, or build command. Upload the package contents to a static directory and open `index.html`.
 
-There is no:
+## Batch 8 highlights
 
-- `npm install`
-- compile step
-- build step
-- React
-- TypeScript
-- Vite
-- MapLibre runtime
-- CDN
-- external JavaScript
-- external CSS
-- mandatory server
-- mandatory cloud account
+### Shift workflow
 
-The entire application is contained in one HTML file.
+- prominent ACTIVE / INACTIVE shift state on WATCH
+- START SHIFT with operator identity
+- optional opening checklist
+- END SHIFT with unresolved-incident/recheck/mesh summary
+- handoff notes and PDF generation
+- shift history under **TOWER → SHIFT**
 
-Use either:
+### Recovery hardening
 
-```text
-FIREWATCH.html
-index.html
-```
+- checksum-verified local recovery snapshots
+- timed snapshots and page-hide snapshots
+- snapshot before START FRESH, NEW STATION, and imports
+- recovery snapshot after import
+- manual recovery creation and restore
+- primary storage is not intentionally cleared by startup failures
+- older FIREWATCH v1.1–v1.4 state continues using the established primary storage key
 
-Both contain the same application.
+See `RECOVERY.md`.
+
+### Diagnostics
+
+**TOWER → DIAGNOSTICS** shows:
+
+- application/version
+- local storage use
+- map-engine status/source
+- basemap mode
+- mesh bridge/pending queue/nodes
+- weather record count
+- current shift
+- recovery snapshots
+
+Diagnostic state can be exported as JSON.
+
+### Field controls
+
+The header now includes **FIELD SIZE**. It increases control and input sizes for touch/tablet use without changing the underlying data model.
+
+Daylight/night appearance remains available with the theme control.
+
+### Two-lookout field-test runner
+
+**TOWER → FIELDTEST** provides a 14-step PASS/FAIL test for the complete Mesh/FWP workflow, including OBS, REQUEST BEARING, triangulation, transport ACK, operations ACK, deliberate radio loss, queueing, reconnect, and handoff.
+
+See `FIELD_TEST.md`.
+
+### Offline map preparation
+
+FIREWATCH still uses Leaflet 1.9.4 and the same geographic workflow introduced earlier.
+
+- Leaflet CSS is included locally.
+- A local `vendor/leaflet.js` is preferred when present.
+- Otherwise the map loader can cache Leaflet 1.9.4 after a connected preparation/first load.
+- **TOWER → DIAGNOSTICS → PREPARE MAP ENGINE** explicitly refreshes that cache.
+- Local XYZ tiles remain supported.
+- No basemap mode remains available.
+
+For a first-ever cold start with no Internet, put the official Leaflet 1.9.4 `leaflet.js` distribution file at `vendor/leaflet.js` before deployment. This is a file-copy operation, not compilation.
+
+See `OFFLINE_MAP.md` and `LOCAL_TILES.md`.
+
+## Core capabilities retained
+
+- WATCH dashboard and NEXT LOOK prioritization
+- rapid SMOKE/FIRE bearing-first observation entry
+- Leaflet operational map
+- OSM / local XYZ / no-basemap modes
+- station and neighboring-lookout editor
+- landmarks and persistent GeoJSON layers
+- Fire Finder bearing/range plotting
+- uncertainty corridors and incident ellipses
+- multi-lookout weighted triangulation
+- raw measurement/residual/outlier evidence
+- lightning import, clustering, and delayed rechecks
+- calibrated horizon references and visibility observations
+- weather evidence and incident/weather chronology
+- incident lifecycle and PDF reporting
+- radio and shift logs
+- FWP/1 27-byte packet format
+- Meshtastic bridge mode and simulator
+- retry queue and duplicate suppression
+- REQUEST BEARING / response workflow
+- radio ACK vs human operations ACK
+- JSON backup/import
+- START FRESH and NEW STATION
 
 ## Deployment
 
-Upload `index.html` directly to any static web directory.
-
-Example:
+Upload the folder directly, for example:
 
 ```text
-/public_html/projects/firewatch/index.html
+/public_html/projects/firewatch/
+  index.html
+  FIREWATCH.html
+  vendor/
+  examples/
+  ...
 ```
 
-Then visit the corresponding URL.
+Then browse to `index.html`.
 
-**Nothing needs to be compiled before upload.**
+For best offline behavior, serve FIREWATCH from a stable HTTP/HTTPS origin rather than changing URLs between sessions. Browser storage and Cache Storage are origin-specific.
 
-`FIREWATCH.html` may also be opened directly from disk. For regular operational use, a stable local or web origin is recommended because browser storage behavior for `file://` pages can vary.
+## Meshtastic bridge
 
-## Major Capabilities
+The main browser app remains usable without a bridge. The optional `meshtastic_bridge.py` connects the FIREWATCH WebSocket protocol to Meshtastic serial/TCP interfaces.
 
-FIREWATCH includes:
-
-- WATCH operational dashboard
-- rapid smoke/fire sighting entry
-- horizon scan tracking
-- recheck / LOOK HERE workflow
-- offline operational map
-- Fire Finder bearing/range plotting
-- bearing and range uncertainty
-- multi-lookout weighted triangulation
-- uncertainty ellipses
-- residual/outlier inspection
-- incident lifecycle and evidence
-- shift and radio logs
-- FWP/1 packet encoding and decoding
-- simulated Meshtastic traffic
-- optional localhost Meshtastic bridge
-- manual weather observations
-- optional JSON weather source
-- equipment tracking
-- offline procedures
-- contact/callsign directory
-- horizon-image workflow
-- lightning observations
-- terrain line-of-sight screening
-- field crew updates
-- incident PDF reports
-- shift/handoff PDF reports
-- JSON backup/import
-- daylight/night modes
-
-## Main Workspaces
-
-### WATCH
-
-The primary lookout operating screen.
-
-WATCH displays current weather, visibility, active incidents, rechecks, horizon scan freshness, and large controls for:
-
-```text
-+ NEW SIGHTING
-START SCAN
-```
-
-### MAP
-
-FIREWATCH uses a dependency-free operational geometry map.
-
-It displays towers, landmarks, bearing rays, incidents, uncertainty ellipses, lightning points, and modeled terrain visibility.
-
-This self-contained edition deliberately does not require Internet basemap tiles.
-
-### INCIDENTS
-
-Sightings can be promoted into incidents with lifecycle states:
-
-```text
-SIGHTING
-SUSPECTED
-REPORTED
-CONFIRMED
-RESPONDING
-MONITORING
-CLOSED
-```
-
-Incident evidence includes observations, contributing bearings, derived coordinates, uncertainty, geometry quality, residuals, and timeline information.
-
-### LOG
-
-FIREWATCH automatically records important operational events including observations, Fire Finder measurements, incident changes, radio traffic, mesh traffic, weather observations, equipment changes, rechecks, and field updates.
-
-Manual log entries are also supported.
-
-### TOWER
-
-Tower operations include:
-
-```text
-WEATHER
-EQUIPMENT
-PROCEDURES
-CONTACTS
-HORIZON
-```
-
-Backup/import and Fresh Start controls are also located here.
-
-### NETWORK
-
-NETWORK provides:
-
-- FWP/1 encoder/decoder
-- simulated mesh transmission
-- packet ledger
-- optional WebSocket Meshtastic bridge
-- station roles
-- field crew updates
-
-Supported station roles:
-
-```text
-LOOKOUT
-DISPATCH
-FIELD_CREW
-RANGER_STATION
-```
-
-## Recording a Sighting
-
-Choose:
-
-**WATCH → + NEW SIGHTING**
-
-Only a bearing is strictly required to establish the geographic observation direction. FIREWATCH encourages:
-
-**CAPTURE NOW → REFINE LATER**
-
-Observation fields include bearing, bearing uncertainty, type, confidence, urgency, optional range, range uncertainty, vertical angle, notes, and useful observation flags.
-
-## Fire Finder
-
-The MAP workspace provides Fire Finder-style entry for:
-
-```text
-Tower
-Bearing / Azimuth
-Bearing uncertainty
-Range
-Range uncertainty
-Vertical angle
-```
-
-When an incident is selected, new bearing measurements become incident evidence.
-
-## Triangulation
-
-FIREWATCH supports weighted triangulation from two or more lookout bearings.
-
-The resulting analysis includes:
-
-- estimated latitude/longitude
-- GOOD / FAIR / POOR geometry
-- RMS bearing residual
-- uncertainty estimate
-- uncertainty ellipse
-- predicted bearing from each tower
-- bearing residual
-- cross-track error
-- normalized residual
-- possible outlier flag
-
-Possible outliers remain visible instead of being silently discarded.
-
-## Recheck / LOOK HERE
-
-Items requiring another visual check can remain in the recheck queue.
-
-Examples include suspected smoke, lightning areas, obscured sectors, prescribed burns, and active incidents.
-
-**LOOK HERE** converts a geographic target into a bearing and range from the current lookout.
-
-## Horizon
-
-TOWER → HORIZON can load a local horizon image.
-
-A manual bearing slider provides explicit calibration.
-
-Choose:
-
-**SMOKE HERE**
-
-to begin a new smoke observation using the selected horizon bearing.
-
-## Weather
-
-Manual weather is available under:
-
-**TOWER → WEATHER → MANUAL OBSERVATION**
-
-Supported values include temperature, RH, wind direction, wind speed, gust, visibility, pressure, and cloud cover.
-
-An optional JSON source may also be polled.
-
-Default example:
-
-```text
-http://127.0.0.1:8780/weather
-```
-
-Example response:
-
-```json
-{
-  "timestamp": "2026-08-13T04:00:00Z",
-  "temperatureF": 82,
-  "rh": 24,
-  "windDir": "SW",
-  "windMph": 11,
-  "gustMph": 18,
-  "pressureInHg": 29.91,
-  "precipIn": 0,
-  "visibilityMi": 28,
-  "cloudCover": "FEW"
-}
-```
-
-The weather source is optional. Manual and all core FIREWATCH functions continue to work offline.
-
-## Landmark Import
-
-Choose:
-
-**MAP → IMPORT GEOJSON / CSV**
-
-CSV format:
-
-```text
-name,lat,lon,type
-Bear Creek,39.619,-78.603,WATER
-Pine Mountain,39.691,-78.670,PEAK
-West Ridge Repeater,39.667,-78.715,TOWER
-```
-
-GeoJSON Point features are also supported.
-
-## Terrain Import
-
-Choose:
-
-**MAP → IMPORT TERRAIN CSV**
-
-Format:
-
-```text
-lat,lon,elevationM
-39.6427,-78.7560,885
-39.6400,-78.7400,910
-39.6350,-78.7200,945
-```
-
-Terrain samples enable approximate offline line-of-sight screening.
-
-This is an operational screening tool, not a substitute for authoritative GIS terrain analysis.
-
-## FWP/1
-
-FIREWATCH contains a compact binary protocol intended for low-bandwidth links such as Meshtastic/LoRa.
-
-The current packet size is exactly:
-
-**27 bytes**
-
-Supported message types include:
-
-```text
-OBS
-UPDATE
-BEARING
-ACK
-CLEAR
-REQUEST
-STATUS
-```
-
-FWP carries compact representations of report ID, timestamp, coordinates, bearing, range, event type, confidence, urgency, and flags.
-
-The NETWORK screen can encode, decode, inspect, and simulate packets without a radio attached.
-
-## Optional Meshtastic Bridge
-
-The self-contained application does not require Meshtastic.
-
-If a compatible local WebSocket bridge is available, FIREWATCH can connect to it.
-
-Default URL:
-
-```text
-ws://127.0.0.1:8765
-```
-
-Incoming bridge messages may provide an FWP payload as hexadecimal bytes:
-
-```json
-{
-  "payloadHex": "01 01 A7 2F 91 ..."
-}
-```
-
-If the bridge is unavailable, FIREWATCH continues operating normally.
-
-## Field Updates
-
-Field-oriented updates include:
-
-```text
-ON SCENE
-FIRE LOCATED
-NO FIRE FOUND
-CORRECT LOCATION
-STATUS
-```
-
-A corrected location can become the incident location while preserving `FIELD CREW` as its provenance.
-
-## Local Storage
-
-FIREWATCH stores operational state in browser `localStorage`.
-
-Storage key:
-
-```text
-firewatch.nobuild.v1.1
-```
-
-There is no telemetry or automatic cloud upload.
-
-## Backup and Restore
-
-Use:
-
-**TOWER → EXPORT BACKUP**
-
-to download the current FIREWATCH state as JSON.
-
-Use:
-
-**TOWER → IMPORT BACKUP**
-
-to restore it.
-
-Regular backups are recommended before changing browsers, computers, hostnames, or clearing site data.
-
-## Fresh Start
-
-**TOWER → FRESH START**
-
-clears current operational records only after confirmation.
-
-Export a backup first if the current data matters.
-
-## Reports
-
-FIREWATCH creates PDF reports directly in the browser.
-
-No Internet service is required.
-
-Incident PDFs can contain location, uncertainty, geometry, observation history, bearing evidence, and chronology.
-
-Shift/handoff PDFs can contain weather, active incidents, open rechecks, handoff notes, and recent operational events.
-
-## Keyboard Shortcuts
-
-```text
-N      New sighting
-M      Map
-L      Log
-Esc    Close dialog
-```
-
-Shortcuts are ignored while typing in form fields.
-
-## Offline Behavior
-
-All application code, CSS, geometry, packet logic, demo data, and UI are embedded directly in the HTML file.
-
-Normal FIREWATCH operation makes no runtime dependency requests.
-
-Only explicitly configured optional services, such as a weather endpoint or Meshtastic bridge, require a network connection.
-
-Because browser service workers must exist as separate same-origin resources, this true one-file edition does not register a PWA service worker.
+See `MESH_BRIDGE.md`.
 
 ## Privacy
 
-FIREWATCH contains:
+FIREWATCH has no analytics, ads, mandatory cloud account, or automatic telemetry. Operational state is stored in the browser unless explicitly exported or transmitted through a configured bridge/network path.
 
-- no advertising
-- no analytics
-- no telemetry
-- no tracking pixels
-- no mandatory account
-- no mandatory Internet connection
-- no automatic cloud synchronization
+## Safety boundary
 
-Operational records remain in the current browser unless explicitly exported or transmitted.
+FIREWATCH is an observation, mapping, communications, evidence, and coordination aid. It does not replace agency dispatch procedures, incident command, trained wildfire personnel, official fire-behavior models, authoritative weather/GIS products, evacuation authority, or validated radio procedures.
 
-## Safety Boundary
+## Files
 
-FIREWATCH is an observation, mapping, communications, and evidence-support instrument.
-
-It does not replace agency dispatch procedures, incident command, trained wildfire personnel, official fire behavior models, validated GIS products, evacuation authority, radio procedures, or authoritative weather products.
-
-## Known Limitations
-
-The self-contained architecture makes deliberate tradeoffs.
-
-The operational map is not a tiled topographic basemap. Terrain visibility uses imported point samples and is approximate. Horizon images are manually bearing-calibrated. Real Meshtastic connectivity requires an optional external bridge. Browser `localStorage` capacity varies, so very large horizon images can consume substantial storage.
-
-These tradeoffs are intentional to preserve FIREWATCH's **no compile, no dependency, directly deployable** architecture.
-
-## Troubleshooting
-
-If FIREWATCH displays a startup error, copy the displayed diagnostic before clearing browser data.
-
-If data appears missing after changing URLs, remember that browser storage is scoped to the page origin. Export from the old location and import into the new one.
-
-If weather polling fails, check the URL, reachability, returned JSON, CORS, and HTTP/HTTPS mixed-content rules.
-
-If the Meshtastic bridge fails, check the WebSocket URL, bridge process, firewall, browser mixed-content policy, and incoming `payloadHex` messages.
-
-If the map has no topographic background, that is expected. Import landmarks and terrain data to provide local context without external mapping dependencies.
-
-## Release Files
-
-```text
-FIREWATCH.html
-index.html
-README.md
-README.txt
-SHA256.txt
-```
-
-`FIREWATCH.html` and `index.html` are equivalent deployable copies.
+- `index.html` — direct deployment entry point
+- `FIREWATCH.html` — equivalent named copy
+- `vendor/leaflet.css` — local Leaflet stylesheet
+- `vendor/leaflet-loader.js` — local/cache/network Leaflet runtime loader
+- `vendor/LEAFLET-NOTICE.txt` — Leaflet attribution/license
+- `meshtastic_bridge.py` — optional radio bridge
+- `MESH_BRIDGE.md` — bridge setup
+- `LOCAL_TILES.md` — local tile packaging
+- `OFFLINE_MAP.md` — offline map-engine preparation
+- `RECOVERY.md` — backup/recovery behavior
+- `FIELD_TEST.md` — two-lookout field test
+- `VALIDATION.md` — release validation notes
+- `CHANGELOG.md` — release changes
 
 ---
 
-**FIREWATCH v1.1.0**  
-**No-Build / Self-Contained Edition**
-
+**FIREWATCH v1.5.0**  
 **SEE IT. LOCATE IT. SHARE IT. KEEP WATCH.**
