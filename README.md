@@ -1,10 +1,26 @@
-# FIREWATCH v1.0.0 — Distributed Wildfire Observation & Lookout Operations System
+
+# FIREWATCH v1.0.1 — Distributed Wildfire Observation & Lookout Operations System
 
 FIREWATCH is a local-first, offline-capable operational web application for remote fire lookout towers, cooperating lookouts, dispatch, ranger stations, and field crews.
 
 > **SEE IT. LOCATE IT. SHARE IT. KEEP WATCH.**
 
 The v1.0 release completes the original roadmap through multi-station synchronization, field crew workflows, dispatch views, recovery hardening, diagnostics, and deployment documentation while retaining all earlier Fire Finder, triangulation, Meshtastic/FWP, horizon, lightning, terrain, weather, reporting, and tower-operations capabilities.
+
+## Important: source ZIP vs deployable site
+
+FIREWATCH is a Vite/React application. **Do not upload this source directory directly to a static web host and expect `index.html` to run.** The source `index.html` references TypeScript/TSX modules that must be compiled by Vite.
+
+For static hosting:
+
+```bash
+npm install
+npm run build
+```
+
+Then upload **the contents of `dist/`**, not the project source tree.
+
+FIREWATCH v1.0.1 sets Vite `base: './'`, uses relative PWA paths, and is safe to deploy in a subfolder such as `/projects/firewatch/`. The bootstrap page also displays a visible diagnostic instead of a blank white screen if the application fails before React starts.
 
 ## Operating model
 

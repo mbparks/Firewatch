@@ -1,4 +1,25 @@
-# FIREWATCH v1.0 Deployment Guide
+# FIREWATCH v1.0.1 Deployment Guide
+
+## Static web hosting (critical)
+
+The project ZIP is **source code**, not a ready-to-upload static site. Browsers cannot execute `src/main.tsx` directly. Always compile first:
+
+```bash
+npm install
+npm run build
+```
+
+Deploy only the generated `dist/` contents. For example, if the public URL is:
+
+```text
+https://example.org/projects/firewatch/
+```
+
+copy the files *inside* `dist/` into the web server directory that maps to `/projects/firewatch/`. Do not copy the outer project directory there as the live site.
+
+Version 1.0.1 uses relative Vite assets and a scope-relative service worker, so this subfolder deployment works without editing the base URL.
+
+If you see `FIREWATCH did not start` and the diagnostic mentions `src/main.tsx`, the source tree was deployed instead of the compiled `dist/` output.
 
 ## Browser application
 

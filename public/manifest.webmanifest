@@ -1,9 +1,10 @@
 {
-  "name": "FIREWATCH — Distributed Wildfire Observation & Lookout Operations System",
+  "name": "FIREWATCH \u2014 Distributed Wildfire Observation & Lookout Operations System",
   "short_name": "FIREWATCH",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#08100d",
   "theme_color": "#0d1512",
-  "description": "Offline-first distributed fire lookout operations, triangulation, Meshtastic reporting, multi-station sync, and field crew coordination."
+  "description": "Offline-first distributed fire lookout operations, triangulation, Meshtastic reporting, multi-station sync, and field crew coordination.",
+  "scope": "."
 }

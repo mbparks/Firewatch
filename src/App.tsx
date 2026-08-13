@@ -26,7 +26,7 @@ import { fmtDateTime, fmtTime, minutesAgo, nowIso } from './utils/time';
 import { makeId, makeReportId } from './utils/ids';
 import { bearingBetween, haversineM } from './triangulation/geometry';
 
-const VERSION='1.0.0';
+const VERSION='1.0.1';
 type Nav='WATCH'|'MAP'|'INCIDENTS'|'LOG'|'NETWORK'|'TOWER';
 type MapTool='MAP'|'FIRE FINDER'|'HORIZON'|'LIGHTNING'|'TERRAIN'|'MESH';
 const NAVS:Nav[]=['WATCH','MAP','INCIDENTS','LOG','NETWORK','TOWER'];

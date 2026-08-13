@@ -77,7 +77,7 @@ export class FirewatchDB extends Dexie {
       fieldUpdates: 'id, incidentId, reportId, timestamp, stationId, type, source', stationPresence: 'id, stationId, role, timestamp', syncConflicts: 'id, entityType, entityId, detectedAt, status', syncStatus: 'id'
     }).upgrade(async tx => {
       const settings:any = await tx.table('settings').get('settings');
-      if (settings) await tx.table('settings').put({...settings,version:'1.0.0',stationRole:settings.stationRole??'LOOKOUT',stationId:settings.stationId??settings.activeTowerId??'LOCAL',syncEnabled:settings.syncEnabled??false,syncServerUrl:settings.syncServerUrl??'http://127.0.0.1:8790',syncIntervalSeconds:settings.syncIntervalSeconds??60,sharePresence:settings.sharePresence??true,fieldPositionMode:settings.fieldPositionMode??'MANUAL'});
+      if (settings) await tx.table('settings').put({...settings,version:'1.0.1',stationRole:settings.stationRole??'LOOKOUT',stationId:settings.stationId??settings.activeTowerId??'LOCAL',syncEnabled:settings.syncEnabled??false,syncServerUrl:settings.syncServerUrl??'http://127.0.0.1:8790',syncIntervalSeconds:settings.syncIntervalSeconds??60,sharePresence:settings.sharePresence??true,fieldPositionMode:settings.fieldPositionMode??'MANUAL'});
       await tx.table('syncStatus').put({id:'sync',cursor:0,pushedRecords:0,pulledRecords:0,consecutiveFailures:0});
     });
   }
@@ -88,7 +88,7 @@ export const db = new FirewatchDB();
 const TABLES = ['towers','landmarks','observations','bearings','incidents','watchItems','weather','weatherSources','visibilityObservations','radioLogs','shiftLogs','shifts','sectors','equipment','maintenance','procedures','procedureRuns','contacts','reports','meshMessages','fieldUpdates','stationPresence','syncConflicts','syncStatus','panoramas','horizonAnnotations','lightning','terrainSamples','settings'] as const;
 
 export async function exportBackup() {
-  const data: Record<string, unknown> = { format: 'FIREWATCH_BACKUP', version: '1.0.0', exportedAt: new Date().toISOString() };
+  const data: Record<string, unknown> = { format: 'FIREWATCH_BACKUP', version: '1.0.1', exportedAt: new Date().toISOString() };
   for (const name of TABLES) data[name] = await db.table(name).toArray();
   return data;
 }
@@ -98,7 +98,7 @@ export async function importBackup(data: Record<string, unknown>) {
   await db.transaction('rw', db.tables, async () => {
     for (const name of TABLES) {
       const table = db.table(name); await table.clear(); let rows = data[name];
-      if (name === 'settings' && Array.isArray(rows)) rows = rows.map((row:any)=>({...row,version:'1.0.0',meshMode:row.meshMode??'SIMULATED',bridgeUrl:row.bridgeUrl??'ws://127.0.0.1:8765',fwpPortNum:row.fwpPortNum??256,viewshedEnabled:row.viewshedEnabled??false,viewshedRangeM:row.viewshedRangeM??30000,weatherAutoPoll:row.weatherAutoPoll??true,stationRole:row.stationRole??'LOOKOUT',stationId:row.stationId??row.activeTowerId??'LOCAL',syncEnabled:row.syncEnabled??false,syncServerUrl:row.syncServerUrl??'http://127.0.0.1:8790',syncIntervalSeconds:row.syncIntervalSeconds??60,sharePresence:row.sharePresence??true,fieldPositionMode:row.fieldPositionMode??'MANUAL'}));
+      if (name === 'settings' && Array.isArray(rows)) rows = rows.map((row:any)=>({...row,version:'1.0.1',meshMode:row.meshMode??'SIMULATED',bridgeUrl:row.bridgeUrl??'ws://127.0.0.1:8765',fwpPortNum:row.fwpPortNum??256,viewshedEnabled:row.viewshedEnabled??false,viewshedRangeM:row.viewshedRangeM??30000,weatherAutoPoll:row.weatherAutoPoll??true,stationRole:row.stationRole??'LOOKOUT',stationId:row.stationId??row.activeTowerId??'LOCAL',syncEnabled:row.syncEnabled??false,syncServerUrl:row.syncServerUrl??'http://127.0.0.1:8790',syncIntervalSeconds:row.syncIntervalSeconds??60,sharePresence:row.sharePresence??true,fieldPositionMode:row.fieldPositionMode??'MANUAL'}));
       if (Array.isArray(rows) && rows.length) await table.bulkAdd(rows);
     }
   });

@@ -1,4 +1,4 @@
-# FIREWATCH v1.0.0 — Batch 4 Validation
+# FIREWATCH v1.0.1 — Startup / Deployment Hotfix Validation
 
 Validation performed in the build sandbox during the 2026-08-12 / 2026-08-13 session.
 
@@ -10,6 +10,20 @@ Validation performed in the build sandbox during the 2026-08-12 / 2026-08-13 ses
 - Result: **0 syntax failures**.
 - Full `src/` structural type check passed using temporary local declarations for unavailable React/Dexie/MapLibre packages.
 - New v1.0 network/sync/field modules included in the structural check.
+
+
+### v1.0.1 startup/deployment regression
+
+- Vite base path is relative: `base: './'`.
+- Source `index.html` uses relative manifest and source-module paths.
+- PWA manifest uses relative `start_url` and `scope`.
+- Service-worker registration resolves from `document.baseURI`.
+- Service-worker cache/navigation fallback resolves from its own registration scope.
+- No remaining root-only `/sw.js`, `/manifest.webmanifest`, or Vite `/` base declarations were found in deployment configuration.
+- HTML now contains a pre-React bootstrap diagnostic; an early module/load failure no longer intentionally leaves an empty root element.
+- IndexedDB remains schema v5; the hotfix does not clear station data.
+- 41 TS/TSX files syntax-transpiled after hotfix with **0 errors**.
+- All three Python bridge/server files byte-compile after packaging.
 
 ### Python services
 
@@ -44,7 +58,7 @@ Local runtime smoke test passed:
 
 ### Service worker
 
-- cache namespace verified as `firewatch-v1.0.0`
+- cache namespace verified as `firewatch-v1.0.1`
 - navigation fallback remains available
 - cross-origin requests are excluded from application cache handling
 
