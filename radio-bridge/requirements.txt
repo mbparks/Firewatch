@@ -1,0 +1,2 @@
+meshtastic==2.7.11
+websockets==17.0.1
